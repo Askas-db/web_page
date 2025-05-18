@@ -51,6 +51,18 @@ body {
     border-radius: 5px;
     margin-bottom: 10px;
     position: relative;
+    width: 100%;
+}
+
+.progress-bar-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 0%;
+    background-color: #4CAF50;
+    border-radius: 5px;
+    pointer-events: none;
 }
 
 .progress-bar::after {

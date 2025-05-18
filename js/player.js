@@ -226,26 +226,29 @@ class MusicPlayer {
     }
 
     updateProgress() {
-        if (this.audio.duration) {
-            const progressPercent = (this.audio.currentTime / this.audio.duration) * 100;
-            this.progressBar.style.setProperty('--progress', `${progressPercent}%`);
-            this.currentTimeEl.textContent = this.formatTime(this.audio.currentTime);
-        }
-    }
+		if (this.audio.duration) {
+			const progressPercent = (this.audio.currentTime / this.audio.duration) * 100;
+			document.getElementById('progress-bar-fill').style.width = `${progressPercent}%`;
+			this.currentTimeEl.textContent = this.formatTime(this.audio.currentTime);
+		}
+	}
+
 
     updateDuration() {
         this.durationEl.textContent = this.formatTime(this.audio.duration);
     }
 
     setProgress(e) {
-        if (!this.audio.duration) return;
+		if (!this.audio.duration) return;
 
-        const width = this.progressBar.clientWidth;
-        const clickX = e.offsetX;
-        const duration = this.audio.duration;
+		const progressBar = document.getElementById('progress-bar');
+		const width = progressBar.clientWidth;
+		const clickX = e.offsetX;
+		const duration = this.audio.duration;
 
-        this.audio.currentTime = (clickX / width) * duration;
-    }
+		this.audio.currentTime = (clickX / width) * duration;
+	}
+
 
     setVolume() {
         this.audio.volume = this.volumeSlider.value;
