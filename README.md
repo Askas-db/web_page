@@ -11,7 +11,6 @@ A static website that functions as a music player supporting both local MP3 file
 - Playlist management
 - Volume control
 - Progress tracking
-- Responsive design
 
 ## Demo
 
@@ -92,8 +91,6 @@ This project is open source and available under the [MIT License](LICENSE).
 ## Credits
 
 - [HLS.js](https://github.com/video-dev/hls.js/) for HLS streaming support
-- Icons from various free sources
-- LLM Mistral.ai for every  
 
 ## Technical Notes
 
