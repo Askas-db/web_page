@@ -15,7 +15,7 @@ A static website that functions as a music player supporting both local MP3 file
 
 ## Demo
 
-![Music Player Screenshot](assets/images/screenshot.png)
+![Music Player Screenshot](assets/images/music-player-webpage.png)
 
 ## Installation
 
