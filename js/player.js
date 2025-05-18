@@ -13,7 +13,12 @@ class MusicPlayer {
         this.addBtn = document.getElementById('add-btn');
         this.fileInput = document.getElementById('file-input');
         this.uploadBtn = document.getElementById('upload-btn');
-
+		//hls 
+		this.hls = null;
+        this.isHls = false;
+        this.streamingIndicator = document.createElement('span');
+        this.streamingIndicator.className = 'streaming-indicator';
+		
         this.playlist = [];
         this.currentSongIndex = 0;
         this.isPlaying = false;
@@ -33,7 +38,8 @@ class MusicPlayer {
         this.addBtn.addEventListener('click', () => this.addSongFromUrl());
         this.uploadBtn.addEventListener('click', () => this.fileInput.click());
         this.fileInput.addEventListener('change', (e) => this.handleFileUpload(e));
-
+		// this.playBtn.appendChild(this.streamingIndicator);
+		
         // Initialize volume
         this.audio.volume = this.volumeSlider.value;
 
@@ -84,7 +90,13 @@ class MusicPlayer {
         const song = this.playlist[this.currentSongIndex];
         this.audio.src = song.url;
         this.audio.load();
-
+		// Check if this is an HLS stream
+        this.isHls = song.url.endsWith('.m3u8') || song.url.includes('.m3u8?');
+		if (this.isHls) {
+            this.setupHlsPlayer(song.url);
+        } else {
+            this.setupRegularPlayer(song.url);
+        }
         // Update playlist UI
         const items = this.playlistEl.querySelectorAll('li');
         items.forEach((item, index) => {
@@ -94,8 +106,76 @@ class MusicPlayer {
             }
         });
     }
+	
+	setupHlsPlayer(url) {
+        // Destroy existing HLS instance if any
+        if (this.hls) {
+            this.hls.destroy();
+        }
+
+        // Create new HLS instance
+        if (Hls.isSupported()) {
+            this.hls = new Hls();
+            this.hls.loadSource(url);
+            this.hls.attachMedia(this.audio);
+
+            // Handle HLS events
+            this.hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                this.play();
+                this.streamingIndicator.classList.add('active');
+            });
+
+            this.hls.on(Hls.Events.ERROR, (event, data) => {
+                if (data.fatal) {
+                    switch (data.type) {
+                        case Hls.ErrorTypes.NETWORK_ERROR:
+                            console.error('Fatal network error encountered');
+                            this.hls.startLoad();
+                            break;
+                        case Hls.ErrorTypes.MEDIA_ERROR:
+                            console.error('Fatal media error encountered');
+                            this.hls.recoverMediaError();
+                            break;
+                        default:
+                            console.error('Fatal error encountered');
+                            this.setupRegularPlayer(url);
+                            break;
+                    }
+                }
+            });
+        } else if (this.audio.canPlayType('application/vnd.apple.mpegurl')) {
+            // Native HLS support (Safari)
+            this.audio.src = url;
+            this.play();
+            this.streamingIndicator.classList.add('active');
+        } else {
+            console.error('HLS is not supported in this browser');
+            alert('HLS streaming is not supported in your browser. Trying regular audio playback.');
+            this.setupRegularPlayer(url);
+        }
+    }
+
+	setupRegularPlayer(url) {
+        this.audio.src = url;
+        this.streamingIndicator.classList.remove('active');
+    }
 
     play() {
+		if (this.isHls) {
+            // For HLS, we need to wait for the manifest to be parsed
+            if (this.hls) {
+                this.audio.play()
+                    .then(() => {
+                        this.isPlaying = true;
+                        this.playBtn.textContent = '⏸';
+                    })
+                    .catch(error => {
+                        console.error('Error playing HLS stream:', error);
+                        alert('Error playing HLS stream. Please check the URL and try again.');
+                    });
+            }
+        } else {
+            // Regular playback
         this.audio.play()
             .then(() => {
                 this.isPlaying = true;
@@ -105,6 +185,7 @@ class MusicPlayer {
                 console.error('Error playing audio:', error);
                 alert('Error playing audio. Please check the file and try again.');
             });
+		}
     }
 
     pause() {
