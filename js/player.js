@@ -13,6 +13,10 @@ class MusicPlayer {
         this.addBtn = document.getElementById('add-btn');
         this.fileInput = document.getElementById('file-input');
         this.uploadBtn = document.getElementById('upload-btn');
+		this.clearPlaylistBtn = document.getElementById('clear-playlist-btn');
+        this.saveStatus = document.getElementById('save-status');
+        this.storageKey = 'musicPlayerPlaylist';
+
 		//hls 
 		this.hls = null;
         this.isHls = false;
@@ -38,20 +42,34 @@ class MusicPlayer {
         this.addBtn.addEventListener('click', () => this.addSongFromUrl());
         this.uploadBtn.addEventListener('click', () => this.fileInput.click());
         this.fileInput.addEventListener('change', (e) => this.handleFileUpload(e));
-		// this.playBtn.appendChild(this.streamingIndicator);
-		
-        // Initialize volume
+		this.playBtn.appendChild(this.streamingIndicator);
+        this.clearPlaylistBtn.addEventListener('click', () => this.clearPlaylist());
+		this.progressBar.addEventListener('click', (e) => this.setProgress(e));
+		        // Initialize
         this.audio.volume = this.volumeSlider.value;
+        this.loadPlaylist();
 
-        // Load default playlist
-        this.loadDefaultPlaylist();
+    }
 
-        // Set up progress bar click
-        this.progressBar.addEventListener('click', (e) => this.setProgress(e));
+	loadPlaylist() {
+        const savedPlaylist = localStorage.getItem(this.storageKey);
+
+        if (savedPlaylist) {
+            try {
+                this.playlist = JSON.parse(savedPlaylist);
+                this.renderPlaylist();
+                this.showSaveStatus('Playlist loaded');
+            } catch (e) {
+                console.error('Error loading playlist:', e);
+                this.loadDefaultPlaylist();
+            }
+        } else {
+            this.loadDefaultPlaylist();
+        }
     }
 
     loadDefaultPlaylist() {
-        // Add default songs from local assets
+                // Add test tracks
         const defaultSongs = [
             { title: 'Luschn - DLT', url: 'assets/audio/Luschn - DLT.mp3' },
             { title: 'Luschn - Race', url: 'assets/audio/Luschn - Race.mp3' }
@@ -60,11 +78,51 @@ class MusicPlayer {
         defaultSongs.forEach(song => {
             this.addToPlaylist(song.title, song.url);
         });
+		
+		this.savePlaylist();
     }
 
-    addToPlaylist(title, url) {
+    addToPlaylist(title, url, save = true) {
         this.playlist.push({ title, url });
         this.renderPlaylist();
+
+        if (save) {
+            this.savePlaylist();
+        }
+    }
+
+    savePlaylist() {
+        try {
+            localStorage.setItem(this.storageKey, JSON.stringify(this.playlist));
+            this.showSaveStatus('Playlist saved');
+        } catch (e) {
+            console.error('Error saving playlist:', e);
+            this.showSaveStatus('Error saving playlist', true);
+        }
+    }
+
+    clearPlaylist() {
+        if (confirm('Are you sure you want to clear the playlist?')) {
+            this.playlist = [];
+            this.renderPlaylist();
+            this.savePlaylist();
+            this.showSaveStatus('Playlist cleared');
+        }
+    }
+
+    showSaveStatus(message, isError = false) {
+        this.saveStatus.textContent = message;
+        this.saveStatus.classList.remove('error');
+        this.saveStatus.classList.add('show');
+
+        if (isError) {
+            this.saveStatus.classList.add('error');
+        }
+
+        setTimeout(() => {
+            this.saveStatus.classList.remove('show');
+            this.saveStatus.classList.remove('error');
+        }, 2000);
     }
 
     renderPlaylist() {
@@ -72,16 +130,51 @@ class MusicPlayer {
         this.playlist.forEach((song, index) => {
             const li = document.createElement('li');
             li.textContent = song.title;
+                    // Remove buttons
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'remove-btn';
+            removeBtn.textContent = '×';
+            removeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.removeSong(index);
+            });
+
+            li.appendChild(removeBtn);
+
             if (index === this.currentSongIndex && this.isPlaying) {
                 li.classList.add('playing');
             }
+
             li.addEventListener('click', () => {
                 this.currentSongIndex = index;
                 this.loadSong();
                 this.play();
             });
+
             this.playlistEl.appendChild(li);
         });
+    }
+
+    removeSong(index) {
+        if (confirm('Are you sure you want to remove this song?')) {
+            this.playlist.splice(index, 1);
+
+            // Adjust current song index if needed
+            if (this.currentSongIndex >= this.playlist.length) {
+                this.currentSongIndex = this.playlist.length - 1;
+            }
+
+            if (this.playlist.length === 0) {
+                this.currentSongIndex = 0;
+                this.audio.src = '';
+                this.isPlaying = false;
+                this.playBtn.textContent = '▶';
+            }
+
+            this.renderPlaylist();
+            this.savePlaylist();
+            this.showSaveStatus('Playlist updated');
+        }
     }
 
     loadSong() {
@@ -90,7 +183,7 @@ class MusicPlayer {
         const song = this.playlist[this.currentSongIndex];
         this.audio.src = song.url;
         this.audio.load();
-		// Check if this is an HLS stream
+		// Check HLS stream
         this.isHls = song.url.endsWith('.m3u8') || song.url.includes('.m3u8?');
 		if (this.isHls) {
             this.setupHlsPlayer(song.url);
@@ -108,18 +201,18 @@ class MusicPlayer {
     }
 	
 	setupHlsPlayer(url) {
-        // Destroy existing HLS instance if any
+                // Destroy HLS instance if any
         if (this.hls) {
             this.hls.destroy();
         }
 
-        // Create new HLS instance
+                // Create HLS instance
         if (Hls.isSupported()) {
             this.hls = new Hls();
             this.hls.loadSource(url);
             this.hls.attachMedia(this.audio);
 
-            // Handle HLS events
+                    // Handle HLS events
             this.hls.on(Hls.Events.MANIFEST_PARSED, () => {
                 this.play();
                 this.streamingIndicator.classList.add('active');
@@ -144,7 +237,7 @@ class MusicPlayer {
                 }
             });
         } else if (this.audio.canPlayType('application/vnd.apple.mpegurl')) {
-            // Native HLS support (Safari)
+                    // Native HLS(Safari)
             this.audio.src = url;
             this.play();
             this.streamingIndicator.classList.add('active');
@@ -162,7 +255,7 @@ class MusicPlayer {
 
     play() {
 		if (this.isHls) {
-            // For HLS, we need to wait for the manifest to be parsed
+            // Wait HSL manifest
             if (this.hls) {
                 this.audio.play()
                     .then(() => {
@@ -175,7 +268,6 @@ class MusicPlayer {
                     });
             }
         } else {
-            // Regular playback
         this.audio.play()
             .then(() => {
                 this.isPlaying = true;

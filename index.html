@@ -22,8 +22,10 @@
 			<div class="progress-bar" id="progress-bar">
 				<div class="progress-bar-fill" id="progress-bar-fill"></div>
 			</div>
-			<span id="current-time">0:00</span>
-			<span id="duration">0:00</span>
+			<div class="progress-time">
+				<span id="current-time">0:00</span>
+				<span id="duration">0:00</span>
+			</div>
 		</div>
 
 
@@ -32,13 +34,20 @@
         </div>
 
         <div class="playlist-container">
-            <h2>Playlist</h2>
-            <ul id="playlist"></ul>
-            <div class="add-song">
-                <input type="text" id="song-url" placeholder="Enter song URL">
-                <button id="add-btn">Add Song</button>
-            </div>
-        </div>
+			<div class="playlist-header">
+				<h2>Playlist</h2>
+				<button id="clear-playlist-btn" class="clear-btn">Clear Playlist</button>
+			</div>
+			<ul id="playlist"></ul>
+			<div class="add-song">
+				<input type="text" id="song-url" placeholder="Enter mp3 or m3u8 URL">
+				<button id="add-btn">Add Music</button>
+			</div>
+			<div class="save-indicator">
+				<span id="save-status">Playlist saved</span>
+			</div>
+		</div>
+
 
         <div class="file-upload">
             <input type="file" id="file-input" accept="audio/mp3" multiple>
