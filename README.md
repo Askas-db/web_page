@@ -43,6 +43,7 @@ A static website that functions as a music player supporting both local MP3 file
 - Supported in most modern browsers (Chrome, Firefox, Edge, Safari)
 
 ## Project Structure
+```
 /web_player/
 ├── index.html          # Main HTML file
 ├── css/
@@ -55,7 +56,7 @@ A static website that functions as a music player supporting both local MP3 file
 │   ├── audio/           # Local audio files
 │   └── images/         # Image assets
 └── README.md           # This file
-
+```
 ## Browser Support
 
 | Browser       | MP3 Support | HLS Support |
